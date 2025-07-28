@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { Kafka } from "kafkajs";
 
 const app = express();
 
@@ -10,6 +11,22 @@ app.use(
 );
 app.use(express.json());
 
+const kafka = new Kafka({
+  clientId: "payment-service",
+  brokers: ["localhost:9094"],
+});
+
+const producer = kafka.producer();
+
+const connectToKafka = async () => {
+  try {
+    await producer.connect();
+    console.log("Producer connected!");
+  } catch (err) {
+    console.log("Error connecting to Kafka", err);
+  }
+};
+
 app.post("/payment-service", async (req, res) => {
   const { cart } = req.body;
 
@@ -19,6 +36,10 @@ app.post("/payment-service", async (req, res) => {
   console.log("API endpoint hit!");
 
   //KAFKA
+  await producer.send({
+    topic: "payment-succesful",
+    messages: [{ value: JSON.stringify({ userId, cart }) }],
+  });
 
   return res.status(200).send("Payment succesfull");
 });
@@ -28,5 +49,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(8000, () => {
+  connectToKafka();
   console.log("Payment service is running on port 8000");
 });
