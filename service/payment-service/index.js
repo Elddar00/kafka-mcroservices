@@ -37,7 +37,7 @@ app.post("/payment-service", async (req, res) => {
 
   //KAFKA
   await producer.send({
-    topic: "payment-succesful",
+    topic: "payment-successful",
     messages: [{ value: JSON.stringify({ userId, cart }) }],
   });
 
